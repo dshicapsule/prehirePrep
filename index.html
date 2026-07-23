@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOP — Prehire Import & Rehire Eligibility Automation</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#ffffff; --ink:#1f2430; --muted:#5b6472;
+    --line:#e3e6ec; --brand:#2f5bea; --brand-dark:#1f3fb0;
+    --good:#0f8a4d; --good-bg:#e7f6ee; --warn:#b26a00; --warn-bg:#fdf3e2;
+    --stop:#c0392b; --stop-bg:#fdecea; --code:#0b1020; --codebg:#0d1424;
+    --chip:#eef2ff; --chipink:#2f4bd0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.55;font-size:16px}
+  a{color:var(--brand)}
+  .app{display:flex;min-height:100vh}
+
+  /* Sidebar */
+  .side{width:290px;flex:0 0 290px;background:var(--panel);border-right:1px solid var(--line);
+        position:sticky;top:0;height:100vh;overflow:auto;padding:22px 16px}
+  .brand{font-weight:700;font-size:15px;letter-spacing:.2px;margin:2px 6px 4px}
+  .brand small{display:block;font-weight:500;color:var(--muted);font-size:12px;margin-top:3px}
+  .searchbox{width:100%;margin:14px 4px 10px;position:relative}
+  .searchbox input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px}
+  .navgroup{margin:14px 6px 4px;font-size:11px;letter-spacing:.9px;text-transform:uppercase;color:var(--muted)}
+  .nav a{display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:8px;color:var(--ink);
+         text-decoration:none;font-size:14.5px;cursor:pointer}
+  .nav a .n{display:inline-flex;width:22px;height:22px;border-radius:6px;background:var(--chip);color:var(--chipink);
+            align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:0 0 22px}
+  .nav a:hover{background:#f2f5ff}
+  .nav a.active{background:var(--brand);color:#fff}
+  .nav a.active .n{background:rgba(255,255,255,.22);color:#fff}
+
+  /* Main */
+  .main{flex:1;min-width:0;padding:34px 46px 90px;max-width:940px}
+  .section{display:none;animation:fade .18s ease}
+  .section.show{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  h1{font-size:27px;margin:0 0 6px}
+  h2{font-size:20px;margin:30px 0 10px;padding-top:6px}
+  h3{font-size:16px;margin:20px 0 6px}
+  .lede{color:var(--muted);font-size:16px;margin:0 0 8px}
+  .crumb{font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--brand);font-weight:700}
+  p{margin:9px 0}
+  ul,ol{margin:9px 0 9px 4px;padding-left:22px}
+  li{margin:5px 0}
+  code{background:#eef1f6;padding:1px 6px;border-radius:5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}.main{padding:24px 18px}.side{display:none}}
+
+  .callout{border-radius:10px;padding:13px 15px;margin:14px 0;border:1px solid;font-size:14.5px}
+  .callout .t{font-weight:700;display:block;margin-bottom:3px}
+  .c-good{background:var(--good-bg);border-color:#bfe6cf;color:#0c5e37}
+  .c-warn{background:var(--warn-bg);border-color:#f2dcae;color:#7a4a00}
+  .c-stop{background:var(--stop-bg);border-color:#f3c4bd;color:#8f271c}
+  .c-info{background:#eef3ff;border-color:#cddcff;color:#22409e}
+
+  /* step list */
+  .steps{counter-reset:s;list-style:none;padding:0;margin:12px 0}
+  .steps>li{counter-increment:s;position:relative;padding:14px 16px 14px 56px;border:1px solid var(--line);
+            border-radius:10px;margin:10px 0;background:#fff}
+  .steps>li::before{content:counter(s);position:absolute;left:14px;top:14px;width:28px;height:28px;border-radius:50%;
+            background:var(--brand);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .steps>li b{display:block;margin-bottom:2px}
+
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#f3f5fa;font-weight:700}
+  td code{white-space:nowrap}
+
+  /* flow diagram */
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:16px 0}
+  .fstep{background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 13px;min-width:150px;flex:1;position:relative}
+  .fstep .h{font-weight:700;font-size:13.5px}
+  .fstep .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .farrow{display:flex;align-items:center;justify-content:center;color:var(--brand);font-size:20px;padding:0 6px}
+  .pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:20px;background:var(--chip);color:var(--chipink);font-weight:700;margin-bottom:5px}
+
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;font-size:14px;margin:10px 0}
+  .kv div:nth-child(odd){color:var(--muted);font-weight:600}
+
+  .toc-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+  .toc-card{border:1px solid var(--line);border-radius:12px;padding:16px;background:#fff;cursor:pointer;transition:.12s}
+  .toc-card:hover{border-color:var(--brand);box-shadow:0 3px 14px rgba(47,91,234,.10)}
+  .toc-card .n{font-size:12px;color:var(--brand);font-weight:700}
+  .toc-card h4{margin:5px 0 3px;font-size:15.5px}
+  .toc-card p{margin:0;font-size:13px;color:var(--muted)}
+
+  .hide{display:none!important}
+  mark{background:#fff2a8;padding:0 2px}
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+
+  /* interactive stepper (click to expand) */
+  .istep{border:1px solid var(--line);border-radius:10px;margin:9px 0;background:#fff;overflow:hidden}
+  .istep>.hd{display:flex;gap:12px;align-items:center;width:100%;padding:12px 15px;cursor:pointer;user-select:none}
+  .istep>.hd:hover{background:#f2f5ff}
+  .istep .num{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;align-items:center;justify-content:center;font-size:13px;flex:0 0 26px}
+  .istep .ttl{font-weight:700;font-size:14.5px;flex:1}
+  .istep .chev{color:var(--muted);font-size:13px;transition:transform .15s;flex:0 0 auto}
+  .istep.open .chev{transform:rotate(90deg)}
+  .istep .body{display:none;padding:0 16px 14px 53px;font-size:14px;color:var(--ink)}
+  .istep .body p{margin:6px 0}
+  .istep.open .body{display:block}
+  .where{display:inline-block;font-size:11.5px;font-weight:700;background:var(--chip);color:var(--chipink);padding:2px 9px;border-radius:20px;margin:3px 6px 3px 0}
+  .where.log{background:#e7f6ee;color:#0c5e37}
+  .where.fountain{background:#fdf3e2;color:#7a4a00}
+  .expand-hint{font-size:12.5px;color:var(--muted);margin:4px 0 10px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="side">
+    <div class="brand">Prehire Import &amp; Rehire Eligibility Automation
+      <small>Standard Operating Procedure</small>
+    </div>
+    <div class="searchbox">
+      <input id="search" type="search" placeholder="Search this SOP…" oninput="doSearch(this.value)">
+    </div>
+
+    <div class="navgroup">Get oriented</div>
+    <nav class="nav" id="nav">
+      <a data-sec="overview"><span class="n">1</span> Overview</a>
+      <a data-sec="map"><span class="n">2</span> System map</a>
+      <a data-sec="daily"><span class="n">3</span> Daily check</a>
+    </nav>
+
+    <div class="navgroup">The two flows</div>
+    <nav class="nav">
+      <a data-sec="drafthire"><span class="n">A</span> Draft Hire pipeline</a>
+      <a data-sec="rehire"><span class="n">B</span> Rehire Eligibility</a>
+      <a data-sec="rippling"><span class="n">C</span> Hiring into Rippling</a>
+    </nav>
+
+    <div class="navgroup">Run &amp; fix</div>
+    <nav class="nav">
+      <a data-sec="run"><span class="n">4</span> Schedule &amp; manual runs</a>
+      <a data-sec="troubleshoot"><span class="n">5</span> Troubleshooting</a>
+      <a data-sec="reference"><span class="n">6</span> Reference &amp; glossary</a>
+    </nav>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main" id="main">
+
+  <!-- ---------- 1. OVERVIEW ---------- -->
+  <section class="section show" id="overview">
+    <div class="crumb">Get oriented · Section 1</div>
+    <h1>Overview</h1>
+    <p class="lede">This automation moves new hires from our applicant system (<b>Fountain</b>) into our HR system (<b>Rippling</b>), and separately decides <b>rehire eligibility</b> for former employees.</p>
+
+    <div class="callout c-info">
+      <span class="t">What it does</span>
+      When a candidate is ready to start, the system gathers their details, creates their employee record in Rippling, records the result, moves them through the Fountain stages automatically, and writes their Rippling IDs back to Fountain — with no manual data entry. A second, independent job reviews former employees and stamps whether they can be rehired.
+    </div>
+
+    <h2>The 60-second summary</h2>
+    <ol>
+      <li><b>Fountain</b> holds candidates. When someone reaches <i>“Ready to start,”</i> they’re a candidate for automation.</li>
+      <li>A <b>Prep</b> job pulls those candidates hourly into a Google Sheet with everything Rippling needs.</li>
+      <li>A <b>Draft Hire</b> job creates each person’s Rippling record, logs every result in the permanent <b>Draft Hire Log</b> tab, and moves successes to <i>Prehire Prep</i>.</li>
+      <li>On each person’s <b>start date</b>, they’re moved on to <i>Prehire Tasks</i>. Once they’re live in Rippling, their Rippling IDs are written back onto their Fountain profile.</li>
+      <li>Separately, an hourly <b>Rehire Eligibility</b> job reviews former employees and writes their eligibility back into Fountain.</li>
+    </ol>
+
+    <div class="toc-cards">
+      <div class="toc-card" onclick="go('map')"><div class="n">SECTION 2</div><h4>See the whole picture →</h4><p>A visual map of every step and where data lives.</p></div>
+      <div class="toc-card" onclick="go('daily')"><div class="n">SECTION 3</div><h4>Just tell me what to check →</h4><p>The short daily checklist.</p></div>
+      <div class="toc-card" onclick="go('run')"><div class="n">SECTION 4</div><h4>Run something now →</h4><p>Which function to run for each task, plus the schedule.</p></div>
+      <div class="toc-card" onclick="go('troubleshoot')"><div class="n">SECTION 5</div><h4>Something's wrong →</h4><p>Alert emails decoded and common fixes.</p></div>
+    </div>
+  </section>
+
+  <!-- ---------- 2. SYSTEM MAP ---------- -->
+  <section class="section" id="map">
+    <div class="crumb">Get oriented · Section 2</div>
+    <h1>System map</h1>
+    <p class="lede">Three systems, one Google Sheet in the middle. Everything the automation does passes through the Sheet.</p>
+
+    <div class="card">
+      <h3 style="margin-top:0">The three systems</h3>
+      <div class="flow">
+        <div class="fstep"><span class="pill">SOURCE</span><div class="h">Fountain (ATS)</div><div class="d">Where candidates live and move through stages. Host: <code>us-2.fountain.com</code></div></div>
+        <div class="farrow">➜</div>
+        <div class="fstep"><span class="pill">MIDDLE</span><div class="h">Google Sheet + Apps Script</div><div class="d">The engine. Pulls, prepares, sends, logs.</div></div>
+        <div class="farrow">➜</div>
+        <div class="fstep"><span class="pill">TARGET</span><div class="h">Rippling (HRIS)</div><div class="d">Where the employee record is created.</div></div>
+      </div>
+    </div>
+
+    <h2>Flow A — Draft Hire pipeline</h2>
+    <div class="flow">
+      <div class="fstep"><div class="h">Ready to start</div><div class="d">Candidate reaches this Fountain stage</div></div>
+      <div class="farrow">➜</div>
+      <div class="fstep"><div class="h">Prep (hourly)</div><div class="d">Pulls person + details into <i>Applicants – Draft Hire API Prep</i></div></div>
+      <div class="farrow">➜</div>
+      <div class="fstep"><div class="h">API tab</div><div class="d">Formulas shape the data on <i>Rippling | Draft Hire API</i></div></div>
+    </div>
+    <div class="flow">
+      <div class="fstep"><div class="h">Draft Hire import</div><div class="d">Creates the Rippling record, logs it, moves successes to <i>Prehire Prep</i></div></div>
+      <div class="farrow">➜</div>
+      <div class="fstep"><div class="h">7 AM sweep</div><div class="d">Moves today's starters to <i>Prehire Tasks</i></div></div>
+      <div class="farrow">➜</div>
+      <div class="fstep"><div class="h">Hourly write-back</div><div class="d">Writes Rippling IDs to Fountain once the person is live</div></div>
+    </div>
+
+    <h2>Flow B — Rehire Eligibility</h2>
+    <div class="flow">
+      <div class="fstep"><div class="h">Rehire Review API stage</div><div class="d">Former employee sits on this Fountain stage</div></div>
+      <div class="farrow">➜</div>
+      <div class="fstep"><div class="h">Hourly job</div><div class="d">Pulls them to the <i>Rehire Review</i> tab</div></div>
+      <div class="farrow">➜</div>
+      <div class="fstep"><div class="h">Formulas</div><div class="d">Compute eligibility in column R</div></div>
+      <div class="farrow">➜</div>
+      <div class="fstep"><div class="h">Write-back + advance</div><div class="d">Saves eligibility to Fountain, moves them on</div></div>
+    </div>
+
+    <div class="callout c-info">
+      <span class="t">The golden rule</span>
+      Prep tabs get <b>wiped and rebuilt every hour</b>. The <b>Draft Hire Log</b> tab is <b>never wiped</b> — it is the permanent memory of who was hired and what happened. When in doubt, trust the Log.
+    </div>
+
+    <h2>What the full pipeline does — and what it writes, where</h2>
+    <p class="lede">One hourly trigger runs <code>runHourlyPipeline</code>, which executes every step in order inside a single run (so steps never overlap). Two moves run on their own triggers. Click any step to see exactly what it appends and on which tab and column.</p>
+    <p class="expand-hint">▸ Tap a step to expand.</p>
+
+    <div class="istep">
+      <div class="hd" onclick="this.parentNode.classList.toggle('open')"><span class="num">1</span><span class="ttl">Census refresh <span style="font-weight:500;color:var(--muted)">· getLatestCensusFromDrive</span></span><span class="chev">▶</span></div>
+      <div class="body">
+        <p>Pulls the latest People Ops census export from Drive so the pipeline knows who is already live in Rippling.</p>
+        <p>Writes to <span class="where">People Ops – Census Report</span> and stamps <span class="where">DATASET INFO · Last updated</span>. If it can't confirm fresh, you get <code>alert-P4</code> (non-fatal — the run continues).</p>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="hd" onclick="this.parentNode.classList.toggle('open')"><span class="num">2</span><span class="ttl">Prehire prep <span style="font-weight:500;color:var(--muted)">· runPrehirePrep</span></span><span class="chev">▶</span></div>
+      <div class="body">
+        <p>Finds everyone on <code>[System] Ready to start</code> and prepares their data. The tab is wiped and rebuilt each run.</p>
+        <p>Writes to <span class="where">Applicants – Draft Hire API Prep · cols A:V</span>, then stamps <span class="where">DATASET INFO · Last updated</span> (every run, even when nobody is queued). Formula columns on <span class="where">Rippling | Draft Hire API</span> recompute from this.</p>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="hd" onclick="this.parentNode.classList.toggle('open')"><span class="num">3</span><span class="ttl">Import draft hires <span style="font-weight:500;color:var(--muted)">· createDraftHiresFromSheet</span></span><span class="chev">▶</span></div>
+      <div class="body">
+        <p>Reads the recomputed API tab and creates each person's draft hire record in Rippling. Blocked rows (any <code>#N/A</code>) are skipped with <code>alert-D5</code>.</p>
+        <p>Appends one row per person to <span class="where log">Draft Hire Log · cols A:I</span> — status in <b>col G</b>, Rippling draft-hire ID in <b>col H</b>, result message in <b>col I</b>. Then internally runs step 4.</p>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="hd" onclick="this.parentNode.classList.toggle('open')"><span class="num">4</span><span class="ttl">Advance successes → Prehire Prep <span style="font-weight:500;color:var(--muted)">· advanceDraftHireSuccessesToPrehirePrep</span></span><span class="chev">▶</span></div>
+      <div class="body">
+        <p>For each successful draft hire still on <code>[System] Ready to start</code>, advances them one Fountain stage. Anyone who has drifted off that stage is skipped silently (no alert).</p>
+        <p>Stamps <span class="where log">Draft Hire Log · col M = "Yes"</span> and <span class="where log">col R = current Fountain stage</span> (the stage they landed on after a successful move).</p>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="hd" onclick="this.parentNode.classList.toggle('open')"><span class="num">5</span><span class="ttl">Rehire / EE-change intake &amp; moves <span style="font-weight:500;color:var(--muted)">· appendRehireEEChangesFromPrep + advance + write-back</span></span><span class="chev">▶</span></div>
+      <div class="body">
+        <p>Copies the classified rehire / employee-change rows off the fresh Prep tab, advances the ready ones one Fountain stage, and writes any ready Rippling IDs back to Fountain.</p>
+        <p>Appends to <span class="where log">Rehires | EE Changes Log</span>; stamps <b>col AN</b> (moved to Prehire Prep), <b>col AT</b> (current stage), and the write-back columns. Rippling IDs are PUT to the <span class="where fountain">Fountain applicant profile</span>.</p>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="hd" onclick="this.parentNode.classList.toggle('open')"><span class="num">6</span><span class="ttl">Rehire review <span style="font-weight:500;color:var(--muted)">· runRehireEligibility</span></span><span class="chev">▶</span></div>
+      <div class="body">
+        <p>Independent job: pulls former employees on the Rehire Review stage and computes eligibility.</p>
+        <p>Rebuilds <span class="where">Rehire Review · cols A:N</span>; eligibility is computed by formula in <b>col R</b> and written back to <span class="where fountain">Fountain</span>.</p>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="hd" onclick="this.parentNode.classList.toggle('open')"><span class="num">+</span><span class="ttl">Separate triggers — not in the hourly run</span><span class="chev">▶</span></div>
+      <div class="body">
+        <p><b>Daily ~7 AM · advanceToPrehireTasksOnStartDate</b> — moves today's starters from Prehire Prep to Prehire Tasks. Stamps <span class="where log">Draft Hire Log · col N = "Yes"</span> and <span class="where log">col R = "[System] Prehire Tasks"</span>.</p>
+        <p><b>Hourly · writeRipplingIdsToFountainWhenReady</b> — once a person is live in Rippling, PUTs their three Rippling IDs onto the <span class="where fountain">Fountain profile</span> and stamps <span class="where log">Draft Hire Log · col Q = "Yes"</span>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- 3. DAILY CHECK ---------- -->
+  <section class="section" id="daily">
+    <div class="crumb">Get oriented · Section 3</div>
+    <h1>Daily check</h1>
+    <p class="lede">Most days the system runs itself and your job is a two-minute look.</p>
+
+    <h2>Your morning check</h2>
+    <ol class="steps">
+      <li><b>Check your email for alerts.</b> The system emails <code>the HR/Ops alerts inbox</code> only when something needs attention — subject lines start with <b>“ACTION REQUIRED.”</b> No email = healthy run.</li>
+      <li><b>Open the Draft Hire Log tab.</b> New people should show <code>success</code> in the <b>Status</b> column (G). Anyone with <code>error</code> needs a look — see Troubleshooting.</li>
+      <li><b>Confirm the moves happened.</b> Every <code>success</code> should show <code>Yes</code> in column <b>M (Moved to Prehire Prep)</b>. Anyone starting today should show <code>Yes</code> in column <b>N (Moved to Prehire Tasks)</b>.</li>
+    </ol>
+
+    <div class="callout c-good">
+      <span class="t">What “healthy” looks like</span>
+      No alert emails · new Log rows show <code>success</code> with column M = <code>Yes</code> · today's starters show <code>Yes</code> in column N · once someone is live in Rippling, column Q flips to <code>Yes</code>.
+    </div>
+
+    <h2>When things happen</h2>
+    <table>
+      <tr><th>Time</th><th>What runs</th><th>What you'd see</th></tr>
+      <tr><td>Every hour</td><td><code>runHourlyPipeline</code> — one job that runs every hourly step in order: (1) Census refresh, (2) Prehire prep, (3) Draft Hire import (moves successes to Prehire Prep), (4) Rehire/EE-change intake (copies classified rows into the static <i>Rehires | EE Changes Log</i>), (5) Rehire advance to Prehire Prep, (6) Rehire write-back to Fountain, (7) Rehire Eligibility. After the census and prep steps it confirms that row shows fresh/“Ready” in <b>DATASET INFO</b> before moving on.</td><td>Census tab refreshes; new Log rows; column M flips to <code>Yes</code>; Rehire log grows; Rehire Review tab refreshes</td></tr>
+      <tr><td>6:00–7:00 AM ET daily</td><td>Move today's starters to Prehire Tasks (<code>runDailyStartDateMoves</code> — covers both draft hires <i>and</i> rehires/EE changes)</td><td>Column N (draft hires) and AO (rehire log) flip to <code>Yes</code> for today's starters</td></tr>
+    </table>
+
+    <div class="callout c-good"><span class="t">One trigger, no clashes</span> The hourly steps run one-at-a-time inside a single execution (<code>runHourlyPipeline</code>), so they can't overlap or collide on the spreadsheet, and Fountain calls stay spread out. Set just one hourly trigger on this function. Each step is isolated — a failure in one is emailed and the rest keep running.</div>
+
+    <div class="callout c-warn"><span class="t">Rippling ID write-back is manual now</span> <code>writeRipplingIdsToFountainWhenReady</code> (draft hires) is no longer on a schedule. Run it by hand (see “Run something by hand”) when you need to push Rippling IDs back to Fountain, or ask to have it added to a trigger. Note: the <i>rehire</i> write-back (<code>writeRehireRipplingIdsToFountain</code>) does run hourly inside <code>runHourlyPipeline</code>.</div>
+
+    <div class="callout c-info"><span class="t">Rehires &amp; EE changes (pending activation)</span> Rows on the Prep tab classified in column <b>AJ</b> as <b>Rehire</b> or <b>Employee changes</b> are copied — statically, deduped by Fountain Applicant ID — into the <b>Rehires | EE Changes Log</b> (columns A:AJ), then given the same stage-moves and write-back the draft hires get (stamps in AN / AO / AR). Rehiring and start-date edits are still done <b>by hand in Rippling</b>; this just automates the Fountain stage moves and the ID write-back afterward. Before it goes live you must: create the log’s <b>AP</b> (“Write Rippling IDs…”) and <b>AQ</b> (“Current Rippling Status”) formulas, confirm <code>START_DATE_COL</code>, and flip <code>REHIRE_LOG_CONFIG.TEST_MODE</code> to <code>false</code>. Column <b>AS</b> (“Fountain ID → Rippling”) is parked until Rippling exposes an update-existing-employee endpoint.</div>
+
+    <div class="callout c-warn">
+      <span class="t">You fix data, not code</span>
+      Almost every fix is a <b>data</b> fix in Fountain or the Sheet — the next run picks it up. See Troubleshooting for the common ones.
+    </div>
+  </section>
+
+  <!-- ---------- FLOW A: DRAFT HIRE ---------- -->
+  <section class="section" id="drafthire">
+    <div class="crumb">The two flows · Flow A</div>
+    <h1>Draft Hire pipeline</h1>
+    <p class="lede">The main flow: it turns a “Ready to start” candidate into a Rippling employee record, moves them to <i>Prehire Prep</i> when the hire succeeds, to <i>Prehire Tasks</i> on their start date, and writes their Rippling IDs back to Fountain once they go live.</p>
+
+    <div class="callout c-info"><span class="t">Where to watch it</span> Everything lands in the Google Sheet. Prep uses the <i>Applicants – Draft Hire API Prep</i> tab; the import reads <i>Rippling | Draft Hire API</i>; all results land in <i>Draft Hire Log</i>.</div>
+
+    <h2>Stage 1 — Prep pull</h2>
+    <p>Every hour, Prep finds everyone on a <b>“Ready to start”</b> stage in Fountain and writes one row per person — name, contact info, title, start date, pay, department, work location, SSN — into the <b>Applicants – Draft Hire API Prep</b> tab. When someone has more than one orientation slot (e.g. a reschedule), only their <b>latest</b> slot is used, so each person appears exactly once.</p>
+    <div class="callout c-warn"><span class="t">This tab is rebuilt every hour</span> Don’t hand-edit it expecting changes to stick. Fix data in Fountain instead.</div>
+
+    <h2>Stage 2 — The API tab</h2>
+    <p>The <b>Rippling | Draft Hire API</b> tab uses formulas to reshape the prepped data into exactly the fields Rippling expects — title, compensation, employment type, work location, legal entity, weekly hours, and so on. It updates automatically; no one edits it by hand.</p>
+
+    <h2>Stage 3 — Draft Hire import</h2>
+    <p>The import sends each person to Rippling to create their <b>draft hire</b> (employee record), gets back their IDs, and records <b>every</b> outcome — success or error — in the Draft Hire Log.</p>
+    <div class="callout c-good"><span class="t">Safe to re-run</span> Anyone already in the Log as a <code>success</code> is skipped, so re-running never creates duplicates.</div>
+    <div class="callout c-warn"><span class="t">The TEST_MODE switch</span> When <code>TEST_MODE</code> is <code>true</code>, the import only <b>previews</b> — it creates nothing and writes nothing to the Log. If nothing is appearing in the Log, check this first.</div>
+
+    <h2>Stage 4 — The Draft Hire Log</h2>
+    <p>This tab is the <b>permanent record</b>. Everyone sent to Rippling appears here exactly once — if the same person is processed again, their existing row is <b>updated in place</b> (matched by Fountain Applicant ID), so an <code>error</code> row flips to <code>success</code> once the problem is fixed.</p>
+    <table>
+      <tr><th>Col</th><th>Name</th><th>Meaning</th></tr>
+      <tr><td>A</td><td>Applicant ID</td><td>Fountain ID — the key that ties everything together</td></tr>
+      <tr><td>B–F</td><td>Name / email / title / start date</td><td>Who the person is</td></tr>
+      <tr><td>G</td><td>Status</td><td><code>success</code>, <code>error</code>, or <code>review</code> (see below)</td></tr>
+      <tr><td>H</td><td>Draft Hire ID</td><td>Rippling’s ID for the created hire</td></tr>
+      <tr><td>I</td><td>Message</td><td>Error detail if something failed</td></tr>
+      <tr><td>J–L</td><td>Rippling IDs</td><td>Role / permanent / profile numbers (from the census)</td></tr>
+      <tr><td>M</td><td>Moved to Prehire Prep?</td><td><code>Yes</code> once the import moved the success to Prehire Prep</td></tr>
+      <tr><td>N</td><td>Moved to Prehire Tasks?</td><td><code>Yes</code> once the 7 AM sweep moved them on their start date</td></tr>
+      <tr><td>O</td><td>Write Rippling IDs to Fountain?</td><td>Formula — turns <code>Yes</code> once all three Rippling IDs are present</td></tr>
+      <tr><td>P</td><td>Current Rippling Status</td><td>Formula lookup of whether the hire exists in Rippling</td></tr>
+      <tr><td>Q</td><td>Rippling IDs updated in Fountain profile</td><td><code>Yes</code> once the write-back pushed the IDs to Fountain</td></tr>
+      <tr><td>R</td><td>Current Fountain Stage</td><td>The person’s Fountain stage. Read fresh each time a move is attempted (used to gate the move); on a <b>successful</b> move it’s updated to the stage they landed on (<code>[System] Prehire Prep</code>, then <code>[System] Prehire Tasks</code>) with no extra Fountain call. If a move is skipped, it shows their real current stage (e.g. <code>On Hold</code>)</td></tr>
+    </table>
+    <div class="callout c-stop"><span class="t">Don’t clear more than you should</span> The automation only fills A–I plus the Yes stamps in M/N/Q and the stage in R. Columns J–L are yours and O/P are formulas. If you ever clear the tab, never clear beyond what you own, or you’ll wipe formulas.</div>
+
+    <h2>Stage 5 — Move to Prehire Prep</h2>
+    <p>The moment the import finishes, it moves every <code>success</code> one stage — from <b>Ready to start</b> to <b>Prehire Prep</b> — and stamps column <b>M</b> with <code>Yes</code>. This pulls a drafted person off the Prep tab on the next hourly rebuild, so they’re never sent to Rippling twice.</p>
+    <div class="callout c-info"><span class="t">Why here, not later</span> The Rippling permanent &amp; profile numbers aren’t known until the person is hired in Rippling and picked up by the census refresh. Rather than wait for those, we move on <b>draft-hire success</b> alone, keeping the Prep tab clean.</div>
+    <div class="callout c-good"><span class="t">Stage-gated — it checks Fountain first</span> Before moving anyone, the sweep reads their <b>live stage in Fountain</b> and records it in column <b>R</b>. It only advances a person whose current stage is <code>[System] Ready to start</code>. If someone has since been put <b>On Hold</b>, rejected, or moved elsewhere, they’re skipped quietly — column R shows where they actually are and <b>no alert is sent</b>. This is why a stuck-looking row is often just someone Fountain has moved on its own.</div>
+
+    <h2>Stage 6 — The 7 AM sweep (move to Prehire Tasks)</h2>
+    <p>Each morning at <b>7:00 AM ET</b>, anyone who is a <code>success</code>, already in Prehire Prep (column M = <code>Yes</code>), not yet moved (column N blank), and <b>starting today</b> is moved from <b>Prehire Prep</b> to <b>Prehire Tasks</b>, and column <b>N</b> is stamped <code>Yes</code>. No Fountain data is written here.</p>
+    <div class="callout c-good"><span class="t">Re-run safe</span> Column N prevents double-moving. Running the sweep twice in a day skips anyone already moved.</div>
+    <div class="callout c-good"><span class="t">Stage-gated here too</span> This move only fires when the person’s live Fountain stage (column R) is <code>[System] Prehire Prep</code>. Anyone not on that stage is skipped quietly with no alert — column R shows their real stage.</div>
+
+    <h2>Stage 7 — Write Rippling IDs back to Fountain</h2>
+    <p>Separately, every hour the three Rippling IDs (role / permanent / profile) are written onto the Fountain profile — but only when column <b>O</b> reads <code>Yes</code> (the formula turns it <code>Yes</code> once all three IDs are present, i.e. the person is live in Rippling and picked up by the census) and column <b>Q</b> is still blank. After writing, column <b>Q</b> is stamped <code>Yes</code>, so each hire is written back exactly once.</p>
+  </section>
+
+  <!-- ---------- FLOW B: REHIRE ---------- -->
+  <section class="section" id="rehire">
+    <div class="crumb">The two flows · Flow B</div>
+    <h1>Rehire Eligibility</h1>
+    <p class="lede">A separate hourly job. It reviews former employees on a special Fountain stage, works out whether they can be rehired, writes that answer back into Fountain, and moves them forward. It doesn’t touch the Draft Hire pipeline.</p>
+
+    <div class="callout c-info"><span class="t">Where to watch it</span> The <b>Rehire Review</b> tab in the same Google Sheet. Rows refresh every hour.</div>
+
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><b>Find the reviewers.</b> The job looks up every <i>“[System] Rehire Review API”</i> stage across all funnels.</li>
+      <li><b>Pull the people.</b> It writes one row each (name, department, SSN, etc.) to the <b>Rehire Review</b> tab.</li>
+      <li><b>Wait for the formulas.</b> Column <b>R</b> computes the answer — one of <code>Not Eligible</code>, <code>Rehire Eligible</code>, or <code>New Hire</code>.</li>
+      <li><b>Write it back.</b> For each person with a valid answer, it saves the eligibility (and any Rippling IDs) onto their Fountain profile.</li>
+      <li><b>Advance them.</b> After a successful write-back, it moves the person to the next stage.</li>
+    </ol>
+
+    <div class="callout c-warn"><span class="t">It only acts on clean answers</span> If column R is blank, still calculating, or shows an error (like <code>#N/A</code>), that person is skipped and picked up on the next run. It never guesses.</div>
+
+    <div class="callout c-good"><span class="t">Self-healing by design</span> The job moves people out of the review stage as it processes them, so a large backlog simply clears a page at a time across hourly runs — which also keeps it under Fountain’s rate limits.</div>
+  </section>
+
+  <!-- ---------- C. RIPPLING ONBOARDING ---------- -->
+  <section class="section" id="rippling">
+    <div class="crumb">The two flows · Manual step</div>
+    <h1>Hiring into Rippling</h1>
+    <p class="lede">The automation creates the <b>draft hire</b> record; a person still has to process it into a live hire inside Rippling. This is that runbook — for whoever is operating onboarding.</p>
+
+    <div class="callout c-info">
+      <span class="t">Where you start: the Draft Hire Log</span>
+      Anyone who is a new hire (a draft hire) shows up in the <b>Draft Hire Log</b>. If <b>column P (Current Rippling Status)</b> reads <code>Not in Rippling yet</code>, that person's draft hire still needs to be processed in Rippling. Work down the list of anyone showing that status.
+    </div>
+
+    <h2>The onboarding flow</h2>
+    <p class="expand-hint">▸ Tap a step to expand.</p>
+
+    <div class="istep open">
+      <div class="hd" onclick="this.parentNode.classList.toggle('open')"><span class="num">1</span><span class="ttl">Find the requested draft hires in Rippling</span><span class="chev">▶</span></div>
+      <div class="body">
+        <p>In Rippling, go to <b>People &gt; HR &gt; New hires &gt; Draft hire</b>, then scroll down to <b>“Requested hire.”</b> You'll see the list of draft hires waiting to be processed.</p>
+        <p>From here you can onboard each one individually, or process several at once — see the next step for bulk.</p>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="hd" onclick="this.parentNode.classList.toggle('open')"><span class="num">2</span><span class="ttl">Onboard — one at a time, or in bulk</span><span class="chev">▶</span></div>
+      <div class="body">
+        <p><b>Individually:</b> open a requested hire and continue onboarding through the prompts.</p>
+        <p><b>In bulk:</b> click <b>Hire</b> (top right) &gt; <b>Multiple people</b>. On the next page leave everything default but select <b>United States</b> as the country. On the following page choose <b>“Select draft hires from external system,”</b> find the team members you're onboarding by selecting their profiles, and follow the prompts.</p>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="hd" onclick="this.parentNode.classList.toggle('open')"><span class="num">3</span><span class="ttl">Courier-specific callouts — do not skip these</span><span class="chev">▶</span></div>
+      <div class="body">
+        <div class="callout c-warn" style="margin-top:8px"><span class="t">EEO job classification</span> For <b>all couriers</b>, the EEO job classification should be <b>“Operatives.”</b></div>
+        <div class="callout c-warn"><span class="t">Tip eligibility is not automated</span> The “tip eligible” question defaults to <b>No</b>. We can't automate this field yet, so you must <b>manually select Yes for every courier.</b></div>
+        <div class="callout c-warn"><span class="t">Worker occupation code</span> On the next page, at the bottom, for anyone marked <b>Tip eligible = Yes</b>, update their worker occupation code by selecting the <b>Driver/Sales</b> option.</div>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="hd" onclick="this.parentNode.classList.toggle('open')"><span class="num">4</span><span class="ttl">Entity, email &amp; device management</span><span class="chev">▶</span></div>
+      <div class="body">
+        <p><b>Entity:</b> all <b>couriers</b> go under the <b>Capsule Logistics</b> entity; everyone else is under <b>Capsule Corporation.</b></p>
+        <p><b>Email (Capsule Corporation only):</b> Corporation hires should have an email. If it didn't get populated by the draft hire import, enter it yourself — username is <b>first initial + last name</b>, domain <code>capsule.com</code> (e.g. Jane Doe → <code>jdoe@capsule.com</code>).</p>
+        <p><b>Device management:</b> until IT leverages device management, default it to <b>None.</b></p>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="hd" onclick="this.parentNode.classList.toggle('open')"><span class="num">5</span><span class="ttl">Finish — click through to Hired</span><span class="chev">▶</span></div>
+      <div class="body">
+        <p>Leave everything else default and click <b>Continue</b> until the hires are processed and marked <b>Hired.</b></p>
+      </div>
+    </div>
+
+    <div class="callout c-good">
+      <span class="t">What happens after you're done</span>
+      The <b>People Ops census</b> updates every hour, and the Prehire Prep workbook then updates the <b>Draft Hire Log</b> — column P (Current Rippling Status) will flip off <code>Not in Rippling yet</code> to reflect each person's real Rippling status. No manual update to the sheet needed.
+    </div>
+  </section>
+
+  <!-- ---------- 4. SCHEDULE & MANUAL RUNS ---------- -->
+  <section class="section" id="run">
+    <div class="crumb">Run &amp; fix · Section 4</div>
+    <h1>Schedule &amp; manual runs</h1>
+    <p class="lede">The automation runs on scheduled timers. You can also run any piece by hand from the Apps Script editor.</p>
+
+    <h2>The schedule</h2>
+    <table>
+      <tr><th>Function</th><th>When</th><th>What it does</th></tr>
+      <tr><td><code>runHourlyPipeline</code></td><td>Hourly (only hourly trigger you need)</td><td>Runs every hourly step in order, one-at-a-time, with a fresh/“Ready” check in DATASET INFO after census and after prep</td></tr>
+      <tr><td><code>runDailyStartDateMoves</code></td><td>Daily · 6:00–7:00 AM ET</td><td>Move today’s starters to Prehire Tasks — for both draft hires and rehires/EE changes</td></tr>
+    </table>
+    <p>The hourly pipeline calls these underneath, in order (all still runnable by hand, see below): <code>getLatestCensusFromDrive</code> → <code>runPrehirePrep</code> → <code>createDraftHiresFromSheet</code> → <code>appendRehireEEChangesFromPrep</code> → <code>advanceRehireSuccessesToPrehirePrep</code> → <code>writeRehireRipplingIdsToFountain</code> → <code>runRehireEligibility</code>. After the census and prep steps it checks that the matching DATASET INFO row is fresh and Status = “Ready”; if not, it emails an alert to the HR/Ops alerts inbox and keeps going.</p>
+
+    <h2>Run something by hand</h2>
+    <p>In the Sheet: <b>Extensions → Apps Script</b>, pick the function from the dropdown at the top, and click <b>Run</b>.</p>
+    <table>
+      <tr><th>I want to…</th><th>Run this</th></tr>
+      <tr><td>Pull the latest Ready-to-start candidates now</td><td><code>runPrehirePrep</code></td></tr>
+      <tr><td>Create draft hires now</td><td><code>createDraftHiresFromSheet</code></td></tr>
+      <tr><td>Prep and then create hires in one go</td><td><code>runPrehirePrepThenCreateDraftHires</code></td></tr>
+      <tr><td>Move today’s starters to Prehire Tasks now (both pipelines)</td><td><code>runDailyStartDateMoves</code></td></tr>
+      <tr><td>Push ready Rippling IDs to Fountain now (draft hires)</td><td><code>writeRipplingIdsToFountainWhenReady</code></td></tr>
+      <tr><td>Bring new rehires / EE changes into the log now</td><td><code>appendRehireEEChangesFromPrep</code></td></tr>
+      <tr><td>Push ready Rippling IDs to Fountain now (rehires)</td><td><code>writeRehireRipplingIdsToFountain</code></td></tr>
+      <tr><td>Re-run the Prehire Prep move (catch-up)</td><td><code>advanceDraftHireSuccessesToPrehirePrep</code></td></tr>
+      <tr><td>Run rehire eligibility now</td><td><code>runRehireEligibility</code></td></tr>
+      <tr><td>Test rehire write-back on rows already in the tab</td><td><code>runRehireWriteBackOnly</code></td></tr>
+    </table>
+    <div class="callout c-info"><span class="t">TEST_MODE first</span> Each script has a <code>TEST_MODE</code> switch. Leave it <code>true</code> to preview a run (reads only, changes nothing), then set it <code>false</code> to act for real.</div>
+
+    <h2>Setting or checking a trigger</h2>
+    <ol class="steps">
+      <li>Open the Sheet → <b>Extensions → Apps Script</b>, then click the <b>clock icon (Triggers)</b> in the left rail.</li>
+      <li>You need only <b>two</b> triggers: <code>runHourlyPipeline</code> on <i>Time-driven → Hour timer → Every hour</i>, and <code>runDailyStartDateMoves</code> on <i>Time-driven → Day timer → 6am–7am</i>. (If you previously set a daily trigger on <code>advanceToPrehireTasksOnStartDate</code>, repoint it to <code>runDailyStartDateMoves</code> so rehires are covered too.) To add one: <b>+ Add Trigger</b> → choose the function → set the interval.</li>
+    </ol>
+    <div class="callout c-info"><span class="t">Why one hourly trigger, not several</span> Apps Script’s “Every hour” option can’t be pinned to a specific minute, so separate hourly triggers could fire at the same time and collide on the Sheet. Running everything inside <code>runHourlyPipeline</code> forces a clean, sequential order instead.</div>
+    <div class="callout c-warn"><span class="t">Watch the 6-minute limit</span> The hourly pipeline now chains census + prep + import + rehire intake/advance/write-back + rehire eligibility, plus a formula wait, all in one execution. Apps Script caps a single execution at ~6 minutes. If the log shows it timing out before the last step, tell me and we’ll trim the formula wait or split the chain.</div>
+    <div class="callout c-warn"><span class="t">Confirm the project timezone</span> The 6 AM sweep depends on it. In the editor: <b>Project Settings → Time zone</b> should be <b>America/New_York</b>, or “6 AM” won’t mean 6 AM Eastern.</div>
+    <div class="callout c-stop"><span class="t">The step everyone forgets</span> Apps Script runs the code <b>pasted in the online editor</b>, not the files on your computer. After changing any file you must paste it in and click <b>Save</b> — and if you edited two files, update <b>both</b>.</div>
+  </section>
+
+  <!-- ---------- 5. TROUBLESHOOTING ---------- -->
+  <section class="section" id="troubleshoot">
+    <div class="crumb">Run &amp; fix · Section 5</div>
+    <h1>Troubleshooting</h1>
+    <p class="lede">Start with the symptom.</p>
+
+    <h2>Common symptoms</h2>
+
+    <div class="card">
+      <h3 style="margin-top:0">Nothing is appearing in the Draft Hire Log</h3>
+      <p>Most likely <code>TEST_MODE</code> is <code>true</code> in the import — it previews but writes nothing. Set it to <code>false</code> and re-run. If you get an <code>alert-D8</code> email instead of rows, the updated post-process code may not be saved in the editor.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">A person was hired but never moved forward in Fountain</h3>
+      <p><b>First, check column R (Current Fountain Stage).</b> The moves are stage-gated: a person only advances to Prehire Prep if Fountain shows them on <code>[System] Ready to start</code>, and only advances to Prehire Tasks if they’re on <code>[System] Prehire Prep</code>. If column R shows anything else (e.g. <code>On Hold</code>), the person was moved in Fountain and the script is <b>correctly</b> leaving them alone — this is expected, not a failure, and no alert is sent.</p>
+      <p><b>Stuck at Ready to start (column M blank) but R still says <code>[System] Ready to start</code>:</b> the move should have happened. If M is blank on such a <code>success</code> row, the move failed — the next hourly import retries it. If it keeps failing, check for an alert email.</p>
+      <p><b>Stuck at Prehire Prep (column N blank):</b> the 7 AM sweep needs all of — Status = <code>success</code> (G), column M = <code>Yes</code>, column N blank, start date = today (F), <b>and</b> column R = <code>[System] Prehire Prep</code>. If it’s not their start date, or they’re not on that stage, that’s expected.</p>
+      <p><b>Rippling IDs not on the Fountain profile (column Q blank):</b> the write-back only fires once column O reads <code>Yes</code>, which needs all three IDs (J/K/L) present. Those don’t appear until the person is live in Rippling and picked up by the census, so a blank Q before then is normal.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">An error row shows in the Log (Status = error)</h3>
+      <p>Read the message in <b>column I</b> — it’s why Rippling or validation rejected the person (e.g. a missing required field). An <code>error</code> row was <b>not</b> created in Rippling, so it’s safe to retry: fix the data in Fountain / the Prep source, and the next run flips the same row to <code>success</code> (no duplicate).</p>
+      <p style="margin-bottom:0">Note: empty runs no longer clutter the Log. When nobody is “Ready to start,” the API tab computes to <code>#N/A</code> — those placeholder rows are now skipped, so you won’t see a bogus <code>error</code> row (e.g. “missing last_name”) and no alert email is sent.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">A draft hire was blocked because of #N/A (alert-D5)</h3>
+      <p>If a row has a real applicant but one or more of its mapped cells resolved to <code>#N/A</code> (or another spreadsheet error), the import <b>will not</b> create a partial profile. It blocks that person, writes an <code>error</code> row, and emails <code>alert-D5</code> naming the person and the exact fields that were <code>#N/A</code>.</p>
+      <p style="margin-bottom:0">The usual cause is a lookup that didn’t map — most often <b>department/division</b>. Open the <code>Rippling | Draft Hire API</code> tab, find that row, and confirm the department/division (and any other looked-up value) exist in the <b>Key</b> tab so the mapping returns a value instead of <code>#N/A</code>. Once fixed, the next run imports the person automatically — no duplicate.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">A row shows Status = review</h3>
+      <p><code>review</code> means the import <b>could not match Rippling’s response back to that person</b>, so it can’t tell whether the hire was created. To be safe it does <b>not</b> auto-retry (that’s how a created hire could be duplicated). <b>Check Rippling directly</b>: if the draft hire exists, change column G to <code>success</code>; if it doesn’t, change it to <code>error</code>. The row will then behave normally on the next run.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Rehire people aren’t being written back</h3>
+      <p>The job only acts on an exact value in <b>column R</b> (<code>Not Eligible</code>, <code>Rehire Eligible</code>, or <code>New Hire</code>). If R is blank, still computing, or shows <code>#N/A</code>/<code>#REF!</code>, the person is skipped until the formula resolves. Confirm the column-R formula produces one of those exact values (spelling and case matter).</p>
+    </div>
+
+    <h2>Alert email codes</h2>
+    <p>All alerts go to <code>the HR/Ops alerts inbox</code> with a subject starting “ACTION REQUIRED.”</p>
+    <table>
+      <tr><th>Code</th><th>Flow</th><th>Meaning &amp; first move</th></tr>
+      <tr><td><code>alert-D5</code></td><td>Draft Hire</td><td>A person’s row had unresolved <code>#N/A</code> in mapped fields, so the import was blocked (no partial profile). Fix the lookup (usually department/division in the Key tab) — see Troubleshooting.</td></tr>
+      <tr><td><code>alert-D8</code></td><td>Draft Hire</td><td>Results couldn’t be written to the Log. Confirm the post-process code is saved in the editor.</td></tr>
+      <tr><td><code>alert-P3</code></td><td>Draft Hire</td><td>A Fountain move or ID write-back failed for a person. Check the Applicant ID and the Log row.</td></tr>
+      <tr><td><code>alert-E1</code></td><td>Rehire</td><td>Couldn’t read applicants from a Fountain stage. Usually transient (rate limit) — check next run.</td></tr>
+      <tr><td><code>alert-E2</code></td><td>Rehire</td><td>No Rehire Review API stage IDs found in Funnels/Stages.</td></tr>
+      <tr><td><code>alert-E3</code></td><td>Rehire</td><td>Write-back to a Fountain profile failed; person was NOT advanced.</td></tr>
+      <tr><td><code>alert-E4</code></td><td>Rehire</td><td>Missing <code>FOUNTAIN_API_TOKEN</code>, or a script-level failure.</td></tr>
+      <tr><td><code>alert-E5</code></td><td>Rehire</td><td>Couldn’t get the WX token — SSNs may be blank this run.</td></tr>
+      <tr><td><code>alert-E6</code></td><td>Rehire</td><td>A required tab (Funnels/Stages or Rehire Review) is missing/renamed.</td></tr>
+      <tr><td><code>alert-E7</code></td><td>Rehire</td><td>Write-back succeeded but the advance failed. Check the funnel transition.</td></tr>
+    </table>
+
+    <h2>Where to look, at a glance</h2>
+    <table>
+      <tr><th>Question</th><th>Look here</th></tr>
+      <tr><td>Did a person get hired?</td><td>Draft Hire Log, column G</td></tr>
+      <tr><td>Why did a hire fail?</td><td>Draft Hire Log, column I</td></tr>
+      <tr><td>Did they move in Fountain?</td><td>Draft Hire Log, columns M &amp; N</td></tr>
+      <tr><td>Are the jobs scheduled?</td><td>Apps Script → Triggers (clock icon)</td></tr>
+      <tr><td>What broke?</td><td>Alert email + Apps Script → Executions</td></tr>
+      <tr><td>Rehire eligibility answer</td><td>Rehire Review tab, column R</td></tr>
+    </table>
+  </section>
+
+  <!-- ---------- 6. REFERENCE ---------- -->
+  <section class="section" id="reference">
+    <div class="crumb">Run &amp; fix · Section 6</div>
+    <h1>Reference &amp; glossary</h1>
+
+    <h2>Glossary</h2>
+    <div class="kv">
+      <div>Fountain</div><div>The applicant tracking system (ATS) where candidates live and move through stages.</div>
+      <div>Rippling</div><div>The HR system (HRIS) where the employee record is created.</div>
+      <div>Draft Hire</div><div>A new employee record created in Rippling via its Draft Hire API.</div>
+      <div>Stage</div><div>A step in a Fountain funnel (e.g. “Ready to start,” “Prehire Prep,” “Prehire Tasks”).</div>
+      <div>Applicant ID</div><div>Fountain’s unique ID for a person — the key used to match records everywhere.</div>
+      <div>Prep tab</div><div>A working tab that is wiped and rebuilt each hour.</div>
+      <div>Draft Hire Log</div><div>The permanent, never-wiped record of every hire result.</div>
+      <div>Write-back</div><div>Saving data (Rippling IDs, eligibility) from the Sheet back onto a Fountain profile.</div>
+      <div>Advance</div><div>Moving an applicant to the next Fountain stage.</div>
+      <div>TEST_MODE</div><div>A safety switch; when true, jobs read only and change nothing.</div>
+      <div>Trigger</div><div>A scheduled timer in Apps Script that runs a function automatically.</div>
+    </div>
+
+    <h2>Key locations</h2>
+    <div class="kv">
+      <div>Google Sheet</div><div>Spreadsheet ID <code>(internal — see the linked sheet)</code></div>
+      <div>Code</div><div>Sheet → Extensions → Apps Script</div>
+      <div>Schedules</div><div>Apps Script → Triggers (clock icon)</div>
+      <div>Run history</div><div>Apps Script → Executions</div>
+      <div>Alerts</div><div>Email to <code>the HR/Ops alerts inbox</code></div>
+    </div>
+
+    <h2>The tabs in the Sheet</h2>
+    <table>
+      <tr><th>Tab</th><th>Wiped?</th><th>Purpose</th></tr>
+      <tr><td>Funnels/Stages</td><td>Rebuilt</td><td>Map of funnels and their key stage IDs</td></tr>
+      <tr><td>Applicants – Draft Hire API Prep</td><td>Rebuilt hourly</td><td>Prepped candidate data</td></tr>
+      <tr><td>Rippling | Draft Hire API</td><td>Formula-driven</td><td>Data shaped for the Rippling API</td></tr>
+      <tr><td>Draft Hire Log</td><td><b>Never</b></td><td>Permanent result record</td></tr>
+      <tr><td>Rehire Review</td><td>A:N rebuilt</td><td>Rehire eligibility review + write-back</td></tr>
+    </table>
+
+    <div class="callout c-info"><span class="t">Tipped status &amp; SOC code are handled outside the API</span> There’s no supported way to import tipped status through the Draft Hire API. The occupation code (<code>soc_code</code>) is only required in the hire wizard when Tipped is marked <b>Yes</b> and, like tips, is set via the manual CSV import — not this automation. Both are handled in Rippling manually.</div>
+
+    <div class="footer">
+      Internal SOP · Prehire Import &amp; Rehire Eligibility Automation.
+      Update this document whenever a stage, tab, trigger, or alert code changes.
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<script>
+  var sections = ["overview","map","daily","drafthire","rehire","rippling","run","troubleshoot","reference"];
+  function go(id){
+    sections.forEach(function(s){
+      document.getElementById(s).classList.toggle('show', s===id);
+    });
+    document.querySelectorAll('#nav a, .nav a').forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('data-sec')===id);
+    });
+    document.getElementById('main').scrollTo(0,0);
+    window.scrollTo(0,0);
+  }
+  document.querySelectorAll('.nav a').forEach(function(a){
+    a.addEventListener('click', function(){ go(a.getAttribute('data-sec')); });
+  });
+
+  // simple full-text search: reveal matches, jump to first section containing it
+  function doSearch(q){
+    q = (q||'').trim().toLowerCase();
+    document.querySelectorAll('mark').forEach(function(m){
+      var p=m.parentNode; p.replaceChild(document.createTextNode(m.textContent), m); p.normalize();
+    });
+    if(q.length < 2) return;
+    var firstHit=null;
+    sections.forEach(function(s){
+      var sec=document.getElementById(s);
+      if(sec.textContent.toLowerCase().indexOf(q)!==-1 && !firstHit){ firstHit=s; }
+    });
+    if(firstHit){ go(firstHit); highlight(document.getElementById(firstHit), q); }
+  }
+  function highlight(node, q){
+    var walker=document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null);
+    var hits=[], n;
+    while((n=walker.nextNode())){
+      if(n.nodeValue.toLowerCase().indexOf(q)!==-1 && n.parentNode.nodeName!=='SCRIPT' && n.parentNode.nodeName!=='STYLE'){ hits.push(n); }
+    }
+    hits.slice(0,60).forEach(function(t){
+      var i=t.nodeValue.toLowerCase().indexOf(q);
+      if(i<0) return;
+      var span=document.createElement('span');
+      span.appendChild(document.createTextNode(t.nodeValue.slice(0,i)));
+      var m=document.createElement('mark'); m.textContent=t.nodeValue.substr(i,q.length);
+      span.appendChild(m);
+      span.appendChild(document.createTextNode(t.nodeValue.slice(i+q.length)));
+      t.parentNode.replaceChild(span, t);
+    });
+  }
+</script>
+</body>
+</html>
